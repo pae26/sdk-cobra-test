@@ -12,6 +12,7 @@ import (
 )
 
 var secretFlags struct {
+	profile  string
 	filename string
 	secret   string
 }
@@ -23,11 +24,11 @@ var secretCmd = &cobra.Command{
 	Long: `update SecretsManager token.
 	show help`,
 	Run: func(cmd *cobra.Command, args []string) {
-		updateSecretsManager(secretFlags.filename, secretFlags.secret)
+		updateSecretsManager(secretFlags.profile, secretFlags.filename, secretFlags.secret)
 	},
 }
 
-func updateSecretsManager(filename string, secret string) {
+func updateSecretsManager(profile string, filename string, secret string) {
 	region := "ap-northeast-1"
 	secretName := secret
 	data, err := os.ReadFile(filename)
@@ -35,7 +36,11 @@ func updateSecretsManager(filename string, secret string) {
 		fmt.Println(err)
 	}
 	secretString := string(data)
-	svc := secretsmanager.New(session.New(), aws.NewConfig().WithRegion(region)) // TODO: Define Must() before using New()
+	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile})) // TODO: Define Must() before using New()
+	svc := secretsmanager.New(
+		sess,
+		aws.NewConfig().WithRegion(region),
+	)
 	input := &secretsmanager.UpdateSecretInput{
 		SecretId:     aws.String(secretName),
 		SecretString: aws.String(secretString),
@@ -73,16 +78,7 @@ func updateSecretsManager(filename string, secret string) {
 
 func init() {
 	rootCmd.AddCommand(secretCmd)
+	secretCmd.Flags().StringVarP(&secretFlags.profile, "profile", "p", "", "specify AWS profile name")
 	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "specify file name")
 	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "specify secret ARN")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// secretCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// secretCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
