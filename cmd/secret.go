@@ -30,19 +30,18 @@ var secretCmd = &cobra.Command{
 
 func updateSecretsManager(profile string, filename string, secret string) {
 	region := "ap-northeast-1"
-	secretName := secret
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println(err)
 	}
 	secretString := string(data)
-	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile})) // TODO: Define Must() before using New()
+	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
 	svc := secretsmanager.New(
 		sess,
 		aws.NewConfig().WithRegion(region),
 	)
 	input := &secretsmanager.UpdateSecretInput{
-		SecretId:     aws.String(secretName),
+		SecretId:     aws.String(secret),
 		SecretString: aws.String(secretString),
 	}
 
