@@ -20,9 +20,9 @@ var secretFlags struct {
 // secretCmd represents the secret command
 var secretCmd = &cobra.Command{
 	Use:   "secret",
-	Short: "update SecretsManager token.",
-	Long: `update SecretsManager token.
-	show help`,
+	Short: "Update SecretsManager token.",
+	Long: `Update SecretsManager token.
+	You must set [-p, -f, -s] options.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		updateSecretsManager(secretFlags.profile, secretFlags.filename, secretFlags.secret)
 	},
@@ -77,7 +77,7 @@ func updateSecretsManager(profile string, filename string, secret string) {
 
 func init() {
 	rootCmd.AddCommand(secretCmd)
-	secretCmd.Flags().StringVarP(&secretFlags.profile, "profile", "p", "", "specify AWS profile name")
-	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "specify file name")
-	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "specify secret ARN")
+	secretCmd.Flags().StringVarP(&secretFlags.profile, "profile", "p", "", "AWS profile name")
+	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file name defined token information")
+	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret ARN")
 }
