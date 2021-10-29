@@ -30,16 +30,19 @@ var secretCmd = &cobra.Command{
 
 func updateSecretsManager(profile string, filename string, secret string) {
 	region := "ap-northeast-1"
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		fmt.Println(err)
-	}
-	secretString := string(data)
+
 	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
 	svc := secretsmanager.New(
 		sess,
 		aws.NewConfig().WithRegion(region),
 	)
+
+	tokenText, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+	secretString := string(tokenText)
+
 	input := &secretsmanager.UpdateSecretInput{
 		SecretId:     aws.String(secret),
 		SecretString: aws.String(secretString),
@@ -77,6 +80,7 @@ func updateSecretsManager(profile string, filename string, secret string) {
 
 func init() {
 	rootCmd.AddCommand(secretCmd)
+
 	secretCmd.Flags().StringVarP(&secretFlags.profile, "profile", "p", "", "AWS profile name")
 	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file name defined token information")
 	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret ARN")
