@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 
+	"github.com/spf13/cobra"
 	// homedir "github.com/mitchellh/go-homedir"
 	// "github.com/spf13/viper"
 )
@@ -12,9 +12,8 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "update",
-	Short: "update 1password and SecretsManager token.",
-	Long: `update 1password and SecretsManager token.
-	show help.`,
+	Short: "Update 1password and SecretsManager token.",
+	Long:  `Update 1password and SecretsManager token.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -35,10 +34,9 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.

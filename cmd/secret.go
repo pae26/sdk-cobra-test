@@ -12,6 +12,7 @@ import (
 )
 
 var secretFlags struct {
+	env      string
 	profile  string
 	filename string
 	secret   string
@@ -22,13 +23,25 @@ var secretCmd = &cobra.Command{
 	Use:   "secret",
 	Short: "Update SecretsManager token.",
 	Long: `Update SecretsManager token.
-	You must set [-p, -f, -s] options.`,
+You must set [-e, -p, -f, -s] options.`,
+	Example: "  update secret -e dev -p zozo-replace-dev-powerUser -f testtoken.yaml -s arn:aws:secretsmanager:ap-northeast-1:xxx",
 	Run: func(cmd *cobra.Command, args []string) {
 		updateSecretsManager(secretFlags.profile, secretFlags.filename, secretFlags.secret)
 	},
 }
 
 func updateSecretsManager(profile string, filename string, secret string) {
+	if secretFlags.env == "" || secretFlags.profile == "" || secretFlags.filename == "" || secretFlags.secret == "" {
+		fmt.Println("You must set [-e, -p, -f, -s] options.")
+		fmt.Println("Show help with [-h] option.")
+		os.Exit(0)
+	}
+
+	if secretFlags.env != "dev" && secretFlags.env != "stg" && secretFlags.env != "prd" {
+		fmt.Println("available env names: dev, stg, prd")
+		os.Exit(0)
+	}
+
 	region := "ap-northeast-1"
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
@@ -81,6 +94,7 @@ func updateSecretsManager(profile string, filename string, secret string) {
 func init() {
 	rootCmd.AddCommand(secretCmd)
 
+	secretCmd.Flags().StringVarP(&secretFlags.env, "env", "e", "", "environment")
 	secretCmd.Flags().StringVarP(&secretFlags.profile, "profile", "p", "", "AWS profile name")
 	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file name defined token information")
 	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret ARN")
