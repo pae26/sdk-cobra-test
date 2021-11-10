@@ -11,7 +11,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "update",
+	Use:   "update-vault-secret",
 	Short: "Update 1password and SecretsManager token.",
 	Long:  `Update 1password and SecretsManager token.`,
 	// Uncomment the following line if your bare application

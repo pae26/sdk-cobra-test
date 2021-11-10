@@ -1,4 +1,4 @@
-module update
+module update-vault-secret
 
 go 1.17
 

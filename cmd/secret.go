@@ -24,7 +24,7 @@ var secretCmd = &cobra.Command{
 	Short: "Update SecretsManager token.",
 	Long: `Update SecretsManager token.
 You must set [-e, -f, -s] options.`,
-	Example: "  update secret -e dev -f testtoken.yaml -s arn:aws:secretsmanager:ap-northeast-1:xxx",
+	Example: "  update-vault-secret secret -e dev -f testtoken.yaml -s arn:aws:secretsmanager:ap-northeast-1:xxx",
 	Run: func(cmd *cobra.Command, args []string) {
 		updateSecretsManager(secretFlags.filename, secretFlags.secret)
 	},
