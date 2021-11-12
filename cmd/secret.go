@@ -20,8 +20,9 @@ var secretFlags struct {
 
 // secretCmd represents the secret command
 var secretCmd = &cobra.Command{
-	Use:   "aws-secrets-manager",
-	Short: "Update SecretsManager token.",
+	Use:     "aws-secrets-manager",
+	Aliases: []string{"aws"},
+	Short:   "Update SecretsManager token.",
 	Long: `Update SecretsManager token.
 You must set [-e, -f, -s] options.`,
 	Example: "  update-secrets aws-secrets-manager -e dev -f testtoken.yaml -s arn:aws:secretsmanager:ap-northeast-1:xxx",
