@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "update-vault-secret/cmd"
+import "update-secrets/cmd"
 
 func main() {
 	cmd.Execute()
