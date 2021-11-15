@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -49,7 +50,12 @@ func updateSecretsManager(filename string, secret string) {
 		os.Exit(0)
 	}
 
-	region := "ap-northeast-1"
+	output, err := exec.Command("aws", "configure", "get", "region", "--profile", profile).Output()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	region := strings.TrimRight(string(output), "\n")
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
 	svc := secretsmanager.New(
