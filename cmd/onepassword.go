@@ -10,6 +10,7 @@ import (
 
 var onepasswordFlags struct {
 	apply    bool
+	create   bool
 	vault    string
 	title    string
 	filename string
@@ -29,25 +30,42 @@ Set [-v, -t, -f] options.`,
 			os.Exit(0)
 		}
 
-		updateOnepassword(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+		updateOnepassword(onepasswordFlags.apply, onepasswordFlags.create, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
 	},
 }
 
-func updateOnepassword(apply bool, vault string, title string, filename string) {
+func updateOnepassword(apply bool, create bool, vault string, title string, filename string) {
 	if apply {
-		if title != "" {
-			output, err := exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title).CombinedOutput()
-			if err != nil {
-				fmt.Println(string(output))
+		if create {
+			if title != "" {
+				output, err := exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title).CombinedOutput()
+				if err != nil {
+					fmt.Println(string(output))
+				}
+			} else {
+				output, err := exec.Command("op", "create", "document", filename, "--vault", vault).CombinedOutput()
+				if err != nil {
+					fmt.Println(string(output))
+				}
 			}
 		} else {
-			output, err := exec.Command("op", "create", "document", filename, "--vault", vault).CombinedOutput()
+			if title == "" {
+				fmt.Println("ERROR: Set title of item with [-t] option.")
+				os.Exit(0)
+			}
+			output, err := exec.Command("op", "edit", "document", title, filename, "--vault", vault).CombinedOutput()
 			if err != nil {
 				fmt.Println(string(output))
 			}
 		}
+
 	} else {
 		fmt.Println("DRY-RUN finished. Use -a option to apply.")
+		if create {
+			fmt.Printf("%-11s: %s\n", "operation", "create")
+		} else {
+			fmt.Printf("%-11s: %s\n", "operation", "edit")
+		}
 		fmt.Printf("%-11s: %s\n", "vault", vault)
 		if title != "" {
 			fmt.Printf("%-11s: %s\n", "title", title)
@@ -62,6 +80,7 @@ func init() {
 	rootCmd.AddCommand(onepasswordCmd)
 
 	onepasswordCmd.Flags().BoolVarP(&onepasswordFlags.apply, "apply", "a", false, "default: dry-run")
+	onepasswordCmd.Flags().BoolVarP(&onepasswordFlags.create, "create", "c", false, "default: edit")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.vault, "vault", "v", "", "vault name")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.title, "title", "t", "", "title of item")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.filename, "file", "f", "", "file path defined token information")
