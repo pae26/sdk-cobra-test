@@ -54,8 +54,7 @@ func updateSecretsManager(filename string, secret string) {
 
 	output, err := exec.Command("aws", "configure", "get", "region", "--profile", profile).Output()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println(string(output))
 	}
 	region := strings.TrimRight(string(output), "\n")
 

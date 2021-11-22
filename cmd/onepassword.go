@@ -36,16 +36,14 @@ Set [-v, -t, -f] options.`,
 func updateOnepassword(apply bool, vault string, title string, filename string) {
 	if apply {
 		if title != "" {
-			_, err := exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title).Output()
+			output, err := exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title).CombinedOutput()
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				fmt.Println(string(output))
 			}
 		} else {
-			_, err := exec.Command("op", "create", "document", filename, "--vault", vault).Output()
+			output, err := exec.Command("op", "create", "document", filename, "--vault", vault).CombinedOutput()
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				fmt.Println(string(output))
 			}
 		}
 	} else {
