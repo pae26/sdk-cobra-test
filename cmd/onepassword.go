@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -53,9 +54,13 @@ func updateOnepassword(apply bool, create bool, vault string, title string, file
 				fmt.Println("ERROR: Set title of item with [-t] option.")
 				os.Exit(0)
 			}
-			output, err := exec.Command("op", "edit", "document", title, filename, "--vault", vault).CombinedOutput()
-			if err != nil {
-				fmt.Println(string(output))
+
+			vault_ary := strings.Split(vault, ",")
+			for _, v := range vault_ary {
+				output, err := exec.Command("op", "edit", "document", title, filename, "--vault", v).CombinedOutput()
+				if err != nil {
+					fmt.Println(string(output))
+				}
 			}
 		}
 
