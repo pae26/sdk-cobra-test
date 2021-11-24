@@ -64,6 +64,12 @@ func updateSecretsManager(filename string, secret string) {
 		aws.NewConfig().WithRegion(region),
 	)
 
+	output, err = exec.Command("sh", "-c", "aws secretsmanager get-secret-value --secret-id "+secret+" | jq -r .ARN").Output()
+	if err != nil {
+		fmt.Println(string(output))
+	}
+	arn := strings.TrimRight(string(output), "\n")
+
 	tokenText, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println(err)
@@ -72,7 +78,7 @@ func updateSecretsManager(filename string, secret string) {
 
 	if secretFlags.apply {
 		input := &secretsmanager.UpdateSecretInput{
-			SecretId:     aws.String(secret),
+			SecretId:     aws.String(arn),
 			SecretString: aws.String(secretString),
 		}
 
@@ -119,5 +125,5 @@ func init() {
 	secretCmd.Flags().BoolVarP(&secretFlags.apply, "apply", "a", false, "default: dry-run")
 	secretCmd.Flags().StringVarP(&secretFlags.env, "env", "e", "", "environment")
 	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file path defined token information")
-	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret ARN")
+	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret name")
 }
