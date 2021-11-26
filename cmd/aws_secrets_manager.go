@@ -40,14 +40,14 @@ You must set [-e, -f, -s] options.`,
 			os.Exit(0)
 		}
 
-		updateSecretsManager(secretFlags.filename, secretFlags.secret)
+		updateSecretsManager(secretFlags.apply, secretFlags.filename, secretFlags.env, secretFlags.secret)
 
 	},
 }
 
-func updateSecretsManager(filename string, secret string) {
+func updateSecretsManager(apply bool, filename string, env string, secret string) {
 	profile := os.Getenv("AWS_PROFILE")
-	if !(strings.Contains(profile, secretFlags.env)) {
+	if !(strings.Contains(profile, env)) {
 		fmt.Println("ERROR: env name inconsistent with AWS profile")
 		os.Exit(0)
 	}
@@ -76,7 +76,7 @@ func updateSecretsManager(filename string, secret string) {
 	}
 	secretString := string(tokenText)
 
-	if secretFlags.apply {
+	if apply {
 		input := &secretsmanager.UpdateSecretInput{
 			SecretId:     aws.String(arn),
 			SecretString: aws.String(secretString),
@@ -108,14 +108,15 @@ func updateSecretsManager(filename string, secret string) {
 			}
 			return
 		}
-
 		fmt.Println(result)
 	} else {
+		fmt.Println("[aws-secrets-manager]")
 		fmt.Println("DRY-RUN finished. Use -a option to apply.")
-		fmt.Printf("%-11s: %s\n", "env", secretFlags.env)
-		fmt.Printf("%-11s: %s\n", "file path", secretFlags.filename) //TODO: add option display or hidden file contents.
+		fmt.Printf("%-11s: %s\n", "env", env)
+		fmt.Printf("%-11s: %s\n", "file path", filename) //TODO: add option display or hidden file contents.
 		fmt.Printf("%-11s: %s\n", "region", region)
-		fmt.Printf("%-11s: ***\n", "secret ARN") //TODO: add option display or hidden secret ARN.
+		fmt.Printf("%-11s: %s\n", "secret name", secret) //TODO: add option display or hidden secret ARN.
+		fmt.Println()
 	}
 }
 

@@ -55,7 +55,7 @@ func editItem(apply bool, vault string, title string, filename string) {
 			}
 		}
 	} else {
-		dryRun("edit", vault, title, filename)
+		dryRunOnepassword("edit", vault, title, filename)
 	}
 }
 
@@ -75,16 +75,18 @@ func createItem(apply bool, vault string, title string, filename string) {
 			os.Exit(0)
 		}
 	} else {
-		dryRun("create", vault, title, filename)
+		dryRunOnepassword("create", vault, title, filename)
 	}
 }
 
-func dryRun(operation string, vault string, title string, filename string) {
+func dryRunOnepassword(operation string, vault string, title string, filename string) {
+	fmt.Println("[onepassword]")
 	fmt.Println("DRY-RUN finished. Use -a option to apply.")
 	fmt.Printf("%-11s: %s\n", "operation", operation)
+	fmt.Printf("%-11s: %s\n", "file path", filename)
 	fmt.Printf("%-11s: %s\n", "vault", vault)
 	fmt.Printf("%-11s: %s\n", "title", title)
-	fmt.Printf("%-11s: %s\n", "file path", filename)
+	fmt.Println()
 }
 
 func init() {

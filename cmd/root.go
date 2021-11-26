@@ -7,12 +7,43 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var updateFlags struct {
+	apply     bool
+	filename  string
+	operation string
+	vault     string
+	title     string
+	env       string
+	secret    string
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "update-secrets",
 	Short: "Update 1password and SecretsManager token.",
 	Long: `Update 1password and SecretsManager token.
-	show help`,
+Show help with [-h] option.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if updateFlags.vault == "" || updateFlags.filename == "" || updateFlags.env == "" || updateFlags.secret == "" {
+			fmt.Println("ERROR: You must set [-f, -v, -t, -e, -s] options.")
+			fmt.Println("Show help with [-h] option.")
+			os.Exit(0)
+		}
+
+		if updateFlags.env != "dev" && updateFlags.env != "stg" && updateFlags.env != "prd" {
+			fmt.Println("ERROR: available env name is [dev, stg, prd]")
+			os.Exit(0)
+		}
+
+		switch updateFlags.operation {
+		case "edit":
+			editItem(updateFlags.apply, updateFlags.vault, updateFlags.title, updateFlags.filename)
+		case "create":
+			createItem(updateFlags.apply, updateFlags.vault, updateFlags.title, updateFlags.filename)
+		}
+
+		updateSecretsManager(updateFlags.apply, updateFlags.filename, updateFlags.env, updateFlags.secret)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -25,5 +56,11 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolVarP(&updateFlags.apply, "apply", "a", false, "default: dry-run")
+	rootCmd.Flags().StringVarP(&updateFlags.filename, "file", "f", "", "file path defined token information")
+	rootCmd.Flags().StringVarP(&updateFlags.operation, "operation", "o", "edit", "[1password]select edit or create. default: edit")
+	rootCmd.Flags().StringVarP(&updateFlags.vault, "vault", "v", "", "[1password]vault name")
+	rootCmd.Flags().StringVarP(&updateFlags.title, "title", "t", "", "[1password]title of item")
+	rootCmd.Flags().StringVarP(&updateFlags.env, "env", "e", "", "[SecretsManager]environment")
+	rootCmd.Flags().StringVarP(&updateFlags.secret, "secret", "s", "", "[SecretsManager]secret name")
 }
