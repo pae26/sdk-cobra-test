@@ -10,11 +10,11 @@ import (
 )
 
 var onepasswordFlags struct {
-	apply    bool
-	create   bool
-	vault    string
-	title    string
-	filename string
+	apply     bool
+	operation string
+	vault     string
+	title     string
+	filename  string
 }
 
 // onepasswordCmd represents the onepassword command
@@ -31,61 +31,67 @@ Set [-v, -t, -f] options.`,
 			os.Exit(0)
 		}
 
-		updateOnepassword(onepasswordFlags.apply, onepasswordFlags.create, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+		switch onepasswordFlags.operation {
+		case "edit":
+			editItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+		case "create":
+			createItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+		}
 	},
 }
 
-func updateOnepassword(apply bool, create bool, vault string, title string, filename string) {
-	if apply {
-		if create {
-			if title != "" {
-				output, err := exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title).CombinedOutput()
-				if err != nil {
-					fmt.Println(string(output))
-				}
-			} else {
-				output, err := exec.Command("op", "create", "document", filename, "--vault", vault).CombinedOutput()
-				if err != nil {
-					fmt.Println(string(output))
-				}
-			}
-		} else {
-			if title == "" {
-				fmt.Println("ERROR: Set title of item with [-t] option.")
-				os.Exit(0)
-			}
-
-			vault_ary := strings.Split(vault, ",")
-			for _, v := range vault_ary {
-				output, err := exec.Command("op", "edit", "document", title, filename, "--vault", v).CombinedOutput()
-				if err != nil {
-					fmt.Println(string(output))
-				}
-			}
-		}
-
-	} else {
-		fmt.Println("DRY-RUN finished. Use -a option to apply.")
-		if create {
-			fmt.Printf("%-11s: %s\n", "operation", "create")
-		} else {
-			fmt.Printf("%-11s: %s\n", "operation", "edit")
-		}
-		fmt.Printf("%-11s: %s\n", "vault", vault)
-		if title != "" {
-			fmt.Printf("%-11s: %s\n", "title", title)
-		} else {
-			fmt.Printf("%-11s: %s\n", "title", "(not specify)")
-		}
-		fmt.Printf("%-11s: %s\n", "file path", filename)
+func editItem(apply bool, vault string, title string, filename string) {
+	if title == "" {
+		fmt.Println("ERROR: Set title of item with [-t] option.")
+		os.Exit(0)
 	}
+
+	if apply {
+		vault_ary := strings.Split(vault, ",")
+		for _, v := range vault_ary {
+			output, err := exec.Command("op", "edit", "document", title, filename, "--vault", v).CombinedOutput()
+			if err != nil {
+				fmt.Println(string(output))
+			}
+		}
+	} else {
+		dryRun("edit", vault, title, filename)
+	}
+}
+
+func createItem(apply bool, vault string, title string, filename string) {
+	var cmd *exec.Cmd
+	if title == "" {
+		title = "(not specify)"
+		cmd = exec.Command("op", "create", "document", filename, "--vault", vault)
+	} else {
+		cmd = exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title)
+	}
+
+	if apply {
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Println(string(output))
+			os.Exit(0)
+		}
+	} else {
+		dryRun("create", vault, title, filename)
+	}
+}
+
+func dryRun(operation string, vault string, title string, filename string) {
+	fmt.Println("DRY-RUN finished. Use -a option to apply.")
+	fmt.Printf("%-11s: %s\n", "operation", operation)
+	fmt.Printf("%-11s: %s\n", "vault", vault)
+	fmt.Printf("%-11s: %s\n", "title", title)
+	fmt.Printf("%-11s: %s\n", "file path", filename)
 }
 
 func init() {
 	rootCmd.AddCommand(onepasswordCmd)
 
 	onepasswordCmd.Flags().BoolVarP(&onepasswordFlags.apply, "apply", "a", false, "default: dry-run")
-	onepasswordCmd.Flags().BoolVarP(&onepasswordFlags.create, "create", "c", false, "default: edit")
+	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.operation, "operation", "o", "edit", "select edit or create. default: edit")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.vault, "vault", "v", "", "vault name")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.title, "title", "t", "", "title of item")
 	onepasswordCmd.Flags().StringVarP(&onepasswordFlags.filename, "file", "f", "", "file path defined token information")
