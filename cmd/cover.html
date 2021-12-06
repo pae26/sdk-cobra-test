@@ -1,0 +1,418 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">update-secrets/cmd/aws_secrets_manager.go (9.1%)</option>
+				
+				<option value="file1">update-secrets/cmd/onepassword.go (50.0%)</option>
+				
+				<option value="file2">update-secrets/cmd/root.go (39.1%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+        "os/exec"
+        "strings"
+
+        "github.com/aws/aws-sdk-go/aws"
+        "github.com/aws/aws-sdk-go/aws/awserr"
+        "github.com/aws/aws-sdk-go/aws/session"
+        "github.com/aws/aws-sdk-go/service/secretsmanager"
+        "github.com/spf13/cobra"
+)
+
+var secretFlags struct {
+        apply    bool
+        env      string
+        filename string
+        secret   string
+}
+
+// secretCmd represents the secret command
+var secretCmd = &amp;cobra.Command{
+        Use:     "aws-secrets-manager",
+        Aliases: []string{"aws"},
+        Short:   "Update SecretsManager token.",
+        Long: `Update SecretsManager token.
+You must set [-e, -f, -s] options.`,
+        Example: "  update-secrets aws-secrets-manager -e dev -f testtoken.yaml -s arn:aws:secretsmanager:ap-northeast-1:xxx",
+        Run: func(cmd *cobra.Command, args []string) <span class="cov0" title="0">{
+                if secretFlags.env == "" || secretFlags.filename == "" || secretFlags.secret == "" </span><span class="cov0" title="0">{
+                        fmt.Println("ERROR: You must set [-e, -f, -s] options.")
+                        fmt.Println("Show help with [-h] option.")
+                        os.Exit(0)
+                }</span>
+
+                <span class="cov0" title="0">if secretFlags.env != "dev" &amp;&amp; secretFlags.env != "stg" &amp;&amp; secretFlags.env != "prd" </span><span class="cov0" title="0">{
+                        fmt.Println("ERROR: available env name is [dev, stg, prd]")
+                        os.Exit(0)
+                }</span>
+
+                <span class="cov0" title="0">updateSecretsManager(secretFlags.apply, secretFlags.filename, secretFlags.env, secretFlags.secret)</span>
+
+        },
+}
+
+func updateSecretsManager(apply bool, filename string, env string, secret string) <span class="cov0" title="0">{
+        profile := os.Getenv("AWS_PROFILE")
+        if !(strings.Contains(profile, env)) </span><span class="cov0" title="0">{
+                fmt.Println("ERROR: env name inconsistent with AWS profile")
+                os.Exit(0)
+        }</span>
+
+        <span class="cov0" title="0">output, err := exec.Command("aws", "configure", "get", "region", "--profile", profile).Output()
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(string(output))
+        }</span>
+        <span class="cov0" title="0">region := strings.TrimRight(string(output), "\n")
+
+        sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
+        svc := secretsmanager.New(
+                sess,
+                aws.NewConfig().WithRegion(region),
+        )
+
+        output, err = exec.Command("sh", "-c", "aws secretsmanager get-secret-value --secret-id "+secret+" | jq -r .ARN").Output()
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(string(output))
+        }</span>
+        <span class="cov0" title="0">arn := strings.TrimRight(string(output), "\n")
+
+        tokenText, err := os.ReadFile(filename)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(err)
+        }</span>
+        <span class="cov0" title="0">secretString := string(tokenText)
+
+        if apply </span><span class="cov0" title="0">{
+                input := &amp;secretsmanager.UpdateSecretInput{
+                        SecretId:     aws.String(arn),
+                        SecretString: aws.String(secretString),
+                }
+
+                result, err := svc.UpdateSecret(input)
+                if err != nil </span><span class="cov0" title="0">{
+                        if aerr, ok := err.(awserr.Error); ok </span><span class="cov0" title="0">{
+                                switch aerr.Code() </span>{
+                                case secretsmanager.ErrCodeInvalidParameterException:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeInvalidParameterException, aerr.Error())</span>
+                                case secretsmanager.ErrCodeInvalidRequestException:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeInvalidRequestException, aerr.Error())</span>
+                                case secretsmanager.ErrCodeLimitExceededException:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeLimitExceededException, aerr.Error())</span>
+                                case secretsmanager.ErrCodeEncryptionFailure:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeEncryptionFailure, aerr.Error())</span>
+                                case secretsmanager.ErrCodeResourceExistsException:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeResourceExistsException, aerr.Error())</span>
+                                case secretsmanager.ErrCodeResourceNotFoundException:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeResourceNotFoundException, aerr.Error())</span>
+                                case secretsmanager.ErrCodeInternalServiceError:<span class="cov0" title="0">
+                                        fmt.Println(secretsmanager.ErrCodeInternalServiceError, aerr.Error())</span>
+                                default:<span class="cov0" title="0">
+                                        fmt.Println(aerr.Error())</span>
+                                }
+                        } else<span class="cov0" title="0"> {
+                                fmt.Println(err.Error())
+                        }</span>
+                        <span class="cov0" title="0">return</span>
+                }
+                <span class="cov0" title="0">fmt.Println(result)</span>
+        } else<span class="cov0" title="0"> {
+                fmt.Println("[aws-secrets-manager]")
+                fmt.Println("DRY-RUN finished. Use -a option to apply.")
+                fmt.Printf("%-11s: %s\n", "env", env)
+                fmt.Printf("%-11s: %s\n", "file path", filename) //TODO: add option display or hidden file contents.
+                fmt.Printf("%-11s: %s\n", "region", region)
+                fmt.Printf("%-11s: %s\n", "secret name", secret) //TODO: add option display or hidden secret ARN.
+                fmt.Println()
+        }</span>
+}
+
+func init() <span class="cov8" title="1">{
+        rootCmd.AddCommand(secretCmd)
+
+        secretCmd.Flags().BoolVarP(&amp;secretFlags.apply, "apply", "a", false, "default: dry-run")
+        secretCmd.Flags().StringVarP(&amp;secretFlags.env, "env", "e", "", "environment")
+        secretCmd.Flags().StringVarP(&amp;secretFlags.filename, "file", "f", "", "file path defined token information")
+        secretCmd.Flags().StringVarP(&amp;secretFlags.secret, "secret", "s", "", "secret name")
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package cmd
+
+import (
+        "fmt"
+        "log"
+        "os"
+        "os/exec"
+        "strings"
+
+        "github.com/spf13/cobra"
+)
+
+var onepasswordFlags struct {
+        apply     bool
+        operation string
+        vault     string
+        title     string
+        filename  string
+}
+
+// onepasswordCmd represents the onepassword command
+var onepasswordCmd = &amp;cobra.Command{
+        Use:     "1password",
+        Aliases: []string{"op"},
+        Short:   "Update 1password item",
+        Long: `Update 1password item.
+Set [-v, -t, -f] options.`,
+        Run: func(cmd *cobra.Command, args []string) <span class="cov0" title="0">{
+                if onepasswordFlags.vault == "" || onepasswordFlags.filename == "" </span><span class="cov0" title="0">{
+                        fmt.Println("ERROR: You must set [-v, -t, -f] options.")
+                        fmt.Println("Show help with [-h] option.")
+                        os.Exit(0)
+                }</span>
+
+                <span class="cov0" title="0">switch onepasswordFlags.operation </span>{
+                case "edit":<span class="cov0" title="0">
+                        err := editItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.Fatalln(err)
+                        }</span>
+                case "create":<span class="cov0" title="0">
+                        createItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)</span>
+                }
+                <span class="cov0" title="0">fmt.Println("1password updated.")</span>
+        },
+}
+
+func editItem(apply bool, vault string, title string, filename string) error <span class="cov8" title="1">{
+        if title == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("ERROR: Set title of item with [-t] option.")
+        }</span>
+
+        <span class="cov8" title="1">if apply </span><span class="cov8" title="1">{
+                vault_ary := strings.Split(vault, ",")
+                for _, v := range vault_ary </span><span class="cov8" title="1">{
+                        output, err := exec.Command("op", "edit", "document", title, filename, "--vault", v).CombinedOutput()
+                        if err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf(string(output))
+                        }</span>
+                }
+        } else<span class="cov8" title="1"> {
+                dryRunOnepassword("edit", vault, title, filename)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func createItem(apply bool, vault string, title string, filename string) <span class="cov0" title="0">{
+        var cmd *exec.Cmd
+        if title == "" </span><span class="cov0" title="0">{
+                title = "(not specify)"
+                cmd = exec.Command("op", "create", "document", filename, "--vault", vault)
+        }</span> else<span class="cov0" title="0"> {
+                cmd = exec.Command("op", "create", "document", filename, "--vault", vault, "--title", title)
+        }</span>
+
+        <span class="cov0" title="0">if apply </span><span class="cov0" title="0">{
+                output, err := cmd.CombinedOutput()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Println(string(output))
+                        os.Exit(0)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                dryRunOnepassword("create", vault, title, filename)
+        }</span>
+}
+
+func dryRunOnepassword(operation string, vault string, title string, filename string) <span class="cov8" title="1">{
+        fmt.Println("[onepassword]")
+        fmt.Println("DRY-RUN finished. Use -a option to apply.")
+        fmt.Printf("%-11s: %s\n", "operation", operation)
+        fmt.Printf("%-11s: %s\n", "file path", filename)
+        fmt.Printf("%-11s: %s\n", "vault", vault)
+        fmt.Printf("%-11s: %s\n", "title", title)
+        fmt.Println()
+}</span>
+
+func init() <span class="cov8" title="1">{
+        rootCmd.AddCommand(onepasswordCmd)
+
+        onepasswordCmd.Flags().BoolVarP(&amp;onepasswordFlags.apply, "apply", "a", false, "default: dry-run")
+        onepasswordCmd.Flags().StringVarP(&amp;onepasswordFlags.operation, "operation", "o", "edit", "select edit or create. default: edit")
+        onepasswordCmd.Flags().StringVarP(&amp;onepasswordFlags.vault, "vault", "v", "", "vault name")
+        onepasswordCmd.Flags().StringVarP(&amp;onepasswordFlags.title, "title", "t", "", "title of item")
+        onepasswordCmd.Flags().StringVarP(&amp;onepasswordFlags.filename, "file", "f", "", "file path defined token information")
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+
+        "github.com/spf13/cobra"
+)
+
+var updateFlags struct {
+        apply     bool
+        filename  string
+        operation string
+        vault     string
+        title     string
+        env       string
+        secret    string
+}
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = NewRootCmd()
+
+func NewRootCmd() *cobra.Command <span class="cov8" title="1">{
+        var rootCmd = &amp;cobra.Command{
+                Use:   "update-secrets",
+                Short: "Update 1password and SecretsManager token.",
+                Long: `Update 1password and SecretsManager token.
+        Show help with [-h] option.`,
+                Run: func(cmd *cobra.Command, args []string) </span><span class="cov0" title="0">{
+                        if updateFlags.vault == "" || updateFlags.filename == "" || updateFlags.env == "" || updateFlags.secret == "" </span><span class="cov0" title="0">{
+                                fmt.Println("ERROR: You must set [-f, -v, -t, -e, -s] options.")
+                                fmt.Println("Show help with [-h] option.")
+                                os.Exit(0)
+                        }</span>
+
+                        <span class="cov0" title="0">if updateFlags.env != "dev" &amp;&amp; updateFlags.env != "stg" &amp;&amp; updateFlags.env != "prd" </span><span class="cov0" title="0">{
+                                fmt.Println("ERROR: available env name is [dev, stg, prd]")
+                                os.Exit(0)
+                        }</span>
+
+                        <span class="cov0" title="0">switch updateFlags.operation </span>{
+                        case "edit":<span class="cov0" title="0">
+                                editItem(updateFlags.apply, updateFlags.vault, updateFlags.title, updateFlags.filename)</span>
+                        case "create":<span class="cov0" title="0">
+                                createItem(updateFlags.apply, updateFlags.vault, updateFlags.title, updateFlags.filename)</span>
+                        }
+
+                        <span class="cov0" title="0">updateSecretsManager(updateFlags.apply, updateFlags.filename, updateFlags.env, updateFlags.secret)</span>
+                },
+        }
+
+        <span class="cov8" title="1">return rootCmd</span>
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() <span class="cov0" title="0">{
+        if err := rootCmd.Execute(); err != nil </span><span class="cov0" title="0">{
+                fmt.Println(err)
+                os.Exit(1)
+        }</span>
+}
+
+func init() <span class="cov8" title="1">{
+        rootCmd.Flags().BoolVarP(&amp;updateFlags.apply, "apply", "a", false, "default: dry-run")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.filename, "file", "f", "", "file path defined token information")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.operation, "operation", "o", "edit", "[1password]select edit or create. default: edit")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.vault, "vault", "v", "", "[1password]vault name")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.title, "title", "t", "", "[1password]title of item")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.env, "env", "e", "", "[SecretsManager]environment")
+        rootCmd.Flags().StringVarP(&amp;updateFlags.secret, "secret", "s", "", "[SecretsManager]secret name")
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

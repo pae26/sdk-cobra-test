@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -33,17 +34,20 @@ Set [-v, -t, -f] options.`,
 
 		switch onepasswordFlags.operation {
 		case "edit":
-			editItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+			err := editItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
+			if err != nil {
+				log.Fatalln(err)
+			}
 		case "create":
 			createItem(onepasswordFlags.apply, onepasswordFlags.vault, onepasswordFlags.title, onepasswordFlags.filename)
 		}
+		fmt.Println("1password updated.")
 	},
 }
 
-func editItem(apply bool, vault string, title string, filename string) {
+func editItem(apply bool, vault string, title string, filename string) error {
 	if title == "" {
-		fmt.Println("ERROR: Set title of item with [-t] option.")
-		os.Exit(0)
+		return fmt.Errorf("ERROR: Set title of item with [-t] option.")
 	}
 
 	if apply {
@@ -51,12 +55,13 @@ func editItem(apply bool, vault string, title string, filename string) {
 		for _, v := range vault_ary {
 			output, err := exec.Command("op", "edit", "document", title, filename, "--vault", v).CombinedOutput()
 			if err != nil {
-				fmt.Println(string(output))
+				return fmt.Errorf(string(output))
 			}
 		}
 	} else {
 		dryRunOnepassword("edit", vault, title, filename)
 	}
+	return nil
 }
 
 func createItem(apply bool, vault string, title string, filename string) {
