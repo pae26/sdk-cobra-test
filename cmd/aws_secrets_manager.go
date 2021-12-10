@@ -64,11 +64,16 @@ func updateSecretsManager(apply bool, filename string, env string, secret string
 		aws.NewConfig().WithRegion(region),
 	)
 
-	output, err = exec.Command("sh", "-c", "aws secretsmanager get-secret-value --secret-id "+secret+" | jq -r .ARN").Output()
-	if err != nil {
-		fmt.Println(string(output))
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secret),
+		//VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
 	}
-	arn := strings.TrimRight(string(output), "\n")
+	secretValue, err := svc.GetSecretValue(input)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(0)
+	}
+	arn := aws.StringValue(secretValue.ARN)
 
 	tokenText, err := os.ReadFile(filename)
 	if err != nil {
@@ -82,8 +87,10 @@ func updateSecretsManager(apply bool, filename string, env string, secret string
 			SecretString: aws.String(secretString),
 		}
 
-		result, err := svc.UpdateSecret(input)
+		_, err := svc.UpdateSecret(input)
 		if err != nil {
+			/* error handling refer to official sample code. */
+			/* https://docs.aws.amazon.com/sdk-for-go/api/service/secretsmanager/#example_SecretsManager_UpdateSecret_shared00 */
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
 				case secretsmanager.ErrCodeInvalidParameterException:
@@ -98,8 +105,12 @@ func updateSecretsManager(apply bool, filename string, env string, secret string
 					fmt.Println(secretsmanager.ErrCodeResourceExistsException, aerr.Error())
 				case secretsmanager.ErrCodeResourceNotFoundException:
 					fmt.Println(secretsmanager.ErrCodeResourceNotFoundException, aerr.Error())
+				case secretsmanager.ErrCodeMalformedPolicyDocumentException:
+					fmt.Println(secretsmanager.ErrCodeMalformedPolicyDocumentException, aerr.Error())
 				case secretsmanager.ErrCodeInternalServiceError:
 					fmt.Println(secretsmanager.ErrCodeInternalServiceError, aerr.Error())
+				case secretsmanager.ErrCodePreconditionNotMetException:
+					fmt.Println(secretsmanager.ErrCodePreconditionNotMetException, aerr.Error())
 				default:
 					fmt.Println(aerr.Error())
 				}
@@ -108,7 +119,7 @@ func updateSecretsManager(apply bool, filename string, env string, secret string
 			}
 			return
 		}
-		fmt.Println(result)
+		fmt.Println("SecretsManager updated.")
 	} else {
 		fmt.Println("[aws-secrets-manager]")
 		fmt.Println("DRY-RUN finished. Use -a option to apply.")
