@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,8 +15,9 @@ import (
 var secretFlags struct {
 	apply    bool
 	env      string
-	filename string
+	region   string
 	secret   string
+	filename string
 }
 
 // secretCmd represents the secret command
@@ -40,23 +40,17 @@ You must set [-e, -f, -s] options.`,
 			os.Exit(0)
 		}
 
-		updateSecretsManager(secretFlags.apply, secretFlags.filename, secretFlags.env, secretFlags.secret)
+		updateSecretsManager(secretFlags.apply, secretFlags.env, secretFlags.region, secretFlags.secret, secretFlags.filename)
 
 	},
 }
 
-func updateSecretsManager(apply bool, filename string, env string, secret string) {
+func updateSecretsManager(apply bool, env string, region string, secret string, filename string) {
 	profile := os.Getenv("AWS_PROFILE")
 	if !(strings.Contains(profile, env)) {
 		fmt.Println("ERROR: env name inconsistent with AWS profile")
 		os.Exit(0)
 	}
-
-	output, err := exec.Command("aws", "configure", "get", "region", "--profile", profile).Output()
-	if err != nil {
-		fmt.Println(string(output))
-	}
-	region := strings.TrimRight(string(output), "\n")
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{Profile: profile}))
 	svc := secretsmanager.New(
@@ -66,7 +60,6 @@ func updateSecretsManager(apply bool, filename string, env string, secret string
 
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(secret),
-		//VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
 	}
 	secretValue, err := svc.GetSecretValue(input)
 	if err != nil {
@@ -136,6 +129,7 @@ func init() {
 
 	secretCmd.Flags().BoolVarP(&secretFlags.apply, "apply", "a", false, "default: dry-run")
 	secretCmd.Flags().StringVarP(&secretFlags.env, "env", "e", "", "environment")
-	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file path defined token information")
+	secretCmd.Flags().StringVarP(&secretFlags.region, "region", "r", "ap-northeast-1", "aws region")
 	secretCmd.Flags().StringVarP(&secretFlags.secret, "secret", "s", "", "secret name")
+	secretCmd.Flags().StringVarP(&secretFlags.filename, "file", "f", "", "file path defined token information")
 }

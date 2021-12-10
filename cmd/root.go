@@ -9,12 +9,13 @@ import (
 
 var updateFlags struct {
 	apply     bool
-	filename  string
 	operation string
 	vault     string
 	title     string
 	env       string
+	region    string
 	secret    string
+	filename  string
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,7 +46,7 @@ func NewRootCmd() *cobra.Command {
 				createItem(updateFlags.apply, updateFlags.vault, updateFlags.title, updateFlags.filename)
 			}
 
-			updateSecretsManager(updateFlags.apply, updateFlags.filename, updateFlags.env, updateFlags.secret)
+			updateSecretsManager(updateFlags.apply, updateFlags.env, updateFlags.region, updateFlags.secret, updateFlags.filename)
 		},
 	}
 
@@ -63,10 +64,11 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolVarP(&updateFlags.apply, "apply", "a", false, "default: dry-run")
-	rootCmd.Flags().StringVarP(&updateFlags.filename, "file", "f", "", "file path defined token information")
 	rootCmd.Flags().StringVarP(&updateFlags.operation, "operation", "o", "edit", "[1password]select edit or create. default: edit")
 	rootCmd.Flags().StringVarP(&updateFlags.vault, "vault", "v", "", "[1password]vault name")
 	rootCmd.Flags().StringVarP(&updateFlags.title, "title", "t", "", "[1password]title of item")
 	rootCmd.Flags().StringVarP(&updateFlags.env, "env", "e", "", "[SecretsManager]environment")
+	rootCmd.Flags().StringVarP(&updateFlags.region, "region", "r", "ap-northeast-1", "aws region")
 	rootCmd.Flags().StringVarP(&updateFlags.secret, "secret", "s", "", "[SecretsManager]secret name")
+	rootCmd.Flags().StringVarP(&updateFlags.filename, "file", "f", "", "file path defined token information")
 }
